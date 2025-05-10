@@ -1,17 +1,17 @@
 [
   {
     "id": 1,
-    "url": "https://www.youtube.com/embed/yzjup1xF2Z0",
+    "url": "https://res.cloudinary.com/dr9van0op/video/upload/v1746909267/anime-train-at-sunset.1920x1080_ckvx4p.mp4",
     "title": "Video 1"
   },
   {
     "id": 2,
-    "url": "https://www.example.com/video2.mp4",
+    "url": "https://res.cloudinary.com/dr9van0op/video/upload/v1746909267/anime-train-at-sunset.1920x1080_ckvx4p.mp4",
     "title": "Video 2"
   },
   {
     "id": 3,
-    "url": "https://www.example.com/video3.mp4",
+    "url": "https://res.cloudinary.com/dr9van0op/video/upload/v1746909846/lost-in-the-endless-sky.1920x1080_xepa0r.mp4",
     "title": "Video 3"
   }
 ]
