@@ -3,17 +3,8 @@
 
 - Reproductor de videos aleatorios emotivos online, simple
 
-##  Estructura
 
 
-├── public/
-│   └── iconos y json
-├── src/
-│   ├── layouts/
-│   │   └── Layout.astro
-│   └── pages/
-│       └── index.astro
-└── package.json
 ## info
 - hecho con astro 
 - deploys en vercel
