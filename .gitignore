@@ -5,8 +5,8 @@ dist/
 .astro/
 .vscode/
 
-#contenido pesado
-/public
+# contenido pesado
+# /public
 
 # dependencies
 node_modules/
