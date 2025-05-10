@@ -1,0 +1,162 @@
+
+
+<div class="video-container">
+    <h3 class="titulo">Why do have fe?</h3>
+
+  <div class="video-wrapper">
+    <video id="videoPlayer" autoplay muted></video>
+    <button id="soundToggle" aria-label="Toggle sound">
+      <span id="soundOnIcon" class="hidden"><img class="sound" src="/sound.png" /></span>
+      <span id="soundOffIcon"><img class="sound" src="/mute.png" /></span>
+    </button>
+  </div>
+</div>
+
+<script>
+  let isPaused = false;
+  let videos = [];
+  let currentVideoIndex = 0;
+  let videoElement = document.getElementById('videoPlayer');
+  let soundToggle = document.getElementById('soundToggle');
+  let soundOnIcon = document.getElementById('soundOnIcon');
+  let soundOffIcon = document.getElementById('soundOffIcon');
+
+  // Cargar videos desde el JSON
+  async function loadVideos() {
+    try {
+      const response = await fetch('/videos.json');
+      videos = await response.json();
+      
+      if (videos.length > 0) {
+        playVideo(currentVideoIndex);
+      }
+    } catch (error) {
+      console.error('Error cargando videos:', error);
+    }
+  }
+
+  // Reproducir video por índice
+  function playVideo(index) {
+    if (videos.length === 0) return;
+    
+    const video = videos[index];
+    videoElement.src = video.url;
+    videoElement.play();
+  }
+
+  // Función para alternar reproducción/pausa
+function togglePlayPause() {
+  const videoElement = document.getElementById('videoPlayer');
+  const videoWrapper = document.querySelector('.video-wrapper');
+  
+  if (videoElement.paused) {
+    videoElement.play();
+    videoWrapper.classList.remove('paused');
+    isPaused = false;
+  } else {
+    videoElement.pause();
+    videoWrapper.classList.add('paused');
+    isPaused = true;
+  }
+}
+
+
+  // Pasar al siguiente video cuando termine
+  function playNextVideo() {
+    currentVideoIndex = (currentVideoIndex + 1) % videos.length;
+    playVideo(currentVideoIndex);
+  }
+
+  // Toggle de sonido
+  function toggleSound() {
+    videoElement.muted = !videoElement.muted;
+    soundOnIcon.classList.toggle('hidden');
+    soundOffIcon.classList.toggle('hidden');
+  }
+
+  // Event listeners
+  document.addEventListener('DOMContentLoaded', loadVideos);
+
+  document.addEventListener('DOMContentLoaded', () => {
+
+
+  videoElement.addEventListener('ended', playNextVideo);
+  soundToggle.addEventListener('click', toggleSound);
+
+  document.querySelector('.video-wrapper').addEventListener('click', (e) => {
+    // Evitar que el clic afecte al botón de sonido
+    if (e.target.id !== 'soundToggle' && 
+        e.target.id !== 'soundOnIcon' && 
+        e.target.id !== 'soundOffIcon') {
+      togglePlayPause();
+    }
+  });
+});
+  
+
+
+</script>
+
+<style>
+  .titulo{
+    font-size: 20px;
+    top: 10px;
+    left: 20px;
+    position: absolute;
+  }
+  .video-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    height: 100vh;
+  }
+  
+  .video-wrapper {
+    position: relative;
+    width: 80vmin; /* Cuadrado usando vmin */
+    height: 80vmin;
+    max-width: 600px;
+    max-height: 600px;
+  }
+  
+  video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 16px;
+    background-color: #111;
+  }
+  
+  #soundToggle {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    background: rgba(0, 0, 0, 0.5);
+    border: none;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    color: white;
+  }
+  .sound{
+    margin: auto;
+
+  filter: invert(1);
+  text-align: center;
+  align-content: center;
+  align-items: center;
+  width: 20px;
+  height: 20px;
+  position: relative;
+  }
+  
+  .hidden {
+    display: none;
+  }
+  
+</style>
