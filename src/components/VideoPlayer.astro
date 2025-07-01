@@ -1,242 +1,236 @@
-<div class="video-container">
-    <h3 class="titulo">Can humanity be trusted humanity?</h3>
-
-  <div class="video-wrapper">
-    <video id="videoPlayer" onclick="togglePlayPause()"  autoplay muted></video>
-    <button id="soundToggle" aria-label="Toggle sound">
-      <span id="soundOnIcon" class="hidden"><img class="sound" src="/sound.png" /></span>
-      <span id="soundOffIcon"><img class="sound" src="/mute.png" /></span>
-      <div class="volume-control">
-        <input type="range" id="volumeSlider" min="0" max="100" value="100" />
+<div class="serious-player-container">
+  <div class="serious-frame">
+    <!-- <div class="serious-title" id="seriousTitle"></div> -->
+    <div class="serious-video-wrapper">
+      <video id="videoPlayer" autoplay playsinline></video>
+      <div class="serious-controls">
+        <button id="soundToggle" aria-label="Toggle sound" class="serious-btn">
+          <span id="soundOnIcon" class="hidden">
+            <!-- SVG: Sound ON -->
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
+          </span>
+          <span id="soundOffIcon">
+            <!-- SVG: Sound OFF -->
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><line x1="23" y1="9" x2="17" y2="15"></line><line x1="17" y1="9" x2="23" y2="15"></line></svg>
+          </span>
+        </button>
+        <button id="nextVideo" aria-label="Siguiente video" class="serious-btn">
+          <!-- SVG: Next -->
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 4 15 12 5 20 5 4"></polygon><line x1="19" y1="5" x2="19" y2="19"></line></svg>
+        </button>
       </div>
-    </button>
+    </div>
   </div>
 </div>
 
 <script>
-  let isPaused = false;
-  let videos: { url: string }[] = [];
+  let videos = [];
   let currentVideoIndex = 0;
-  const videoElement = document.getElementById('videoPlayer') as HTMLVideoElement;
-  const soundToggle = document.getElementById('soundToggle') as HTMLButtonElement;
-  const soundOnIcon = document.getElementById('soundOnIcon') as HTMLElement;
-  const soundOffIcon = document.getElementById('soundOffIcon') as HTMLElement;
+  let isMuted = false;
+  let isLoading = false;
 
-  // Cargar videos desde el JSON
-  async function loadVideos() {
-    try {
-      const response = await fetch('/videos.json');
-      videos = await response.json();
-      
-      if (videos.length > 0) {
-        playVideo(currentVideoIndex);
-      }
-    } catch (error) {
-      console.error('Error cargando videos:', error);
-    }
-  }
-
-  // Reproducir video por índice
-  function playVideo(index: number) {
-    if (videos.length === 0) return;
-    
-    const video = videos[index];
-    videoElement.src = video.url;
-    videoElement.play();
-  }
-
-  // Función para alternar reproducción/pausa
-  function togglePlayPause() {
-    if (!videoElement) return;
-    const videoWrapper = document.querySelector('.video-wrapper');
-    if (!videoWrapper) return;
-    
-    if (videoElement.paused) {
-      videoElement.play();
-      videoWrapper.classList.remove('paused');
-      isPaused = false;
-    } else {
-      videoElement.pause();
-      videoWrapper.classList.add('paused');
-      isPaused = true;
-    }
-  }
-
-  // Pasar al siguiente video cuando termine
-  function playNextVideo() {
-    currentVideoIndex = (currentVideoIndex + 1) % videos.length;
-    playVideo(currentVideoIndex);
-  }
-
-  // Toggle de sonido
-  function toggleSound() {
-    if (!videoElement || !soundOnIcon || !soundOffIcon) return;
-    videoElement.muted = !videoElement.muted;
-    soundOnIcon.classList.toggle('hidden');
-    soundOffIcon.classList.toggle('hidden');
-    
-    // Si desmutea, establecer el volumen al valor del slider
-    const volumeSlider = document.getElementById('volumeSlider') as HTMLInputElement;
-    if (!videoElement.muted && volumeSlider) {
-      videoElement.volume = parseInt(volumeSlider.value, 10) / 100;
-    }
-  }
-
-  // Controlar el volumen
   document.addEventListener('DOMContentLoaded', () => {
-    const volumeSlider = document.getElementById('volumeSlider') as HTMLInputElement;
-    if (!volumeSlider || !videoElement || !soundOnIcon || !soundOffIcon) return;
-    
-    const handleVolumeChange = (e: Event) => {
-      const target = e.target as HTMLInputElement;
-      const volume = parseInt(target.value, 10) / 100;
-      if (videoElement) {
-        videoElement.volume = volume;
-        
-        // Si el volumen es 0, mutear, si no, desmutear
-        if (volume === 0) {
-          videoElement.muted = true;
-          soundOnIcon.classList.add('hidden');
-          soundOffIcon.classList.remove('hidden');
-        } else if (videoElement.muted) {
-          videoElement.muted = false;
-          soundOnIcon.classList.remove('hidden');
-          soundOffIcon.classList.add('hidden');
+    const videoElement = document.getElementById('videoPlayer');
+    const soundToggle = document.getElementById('soundToggle');
+    const soundOnIcon = document.getElementById('soundOnIcon');
+    const soundOffIcon = document.getElementById('soundOffIcon');
+    const nextVideoBtn = document.getElementById('nextVideo');
+    const titleElement = document.getElementById('seriousTitle');
+
+    // Cargar videos desde localStorage o JSON por defecto
+    async function loadVideos() {
+      try {
+        const storedVideos = localStorage.getItem('videos');
+        if (storedVideos) {
+          videos = JSON.parse(storedVideos);
+          if (videos.length > 0) {
+            playVideo(currentVideoIndex);
+            return;
+          }
+        }
+        const response = await fetch('/videos.json');
+        videos = await response.json();
+        if (videos.length > 0) {
+          playVideo(currentVideoIndex);
+        }
+      } catch (error) {
+        showTitle('Error cargando videos');
+      }
+    }
+
+    // Reproducir video por índice
+    function playVideo(index) {
+      if (!videos.length || !videoElement) return;
+      isLoading = true;
+      const video = videos[index];
+      videoElement.src = video.url;
+      videoElement.load();
+      videoElement.play().catch(() => {});
+      showTitle(video.title);
+    }
+
+    // Mostrar título con animación máquina de escribir
+    function showTitle(text) {
+      if (!titleElement) return;
+      titleElement.textContent = '';
+      let i = 0;
+      function type() {
+        if (i < text.length) {
+          titleElement.textContent += text.charAt(i);
+          i++;
+          setTimeout(type, 40);
         }
       }
-    };
+      type();
+    }
 
-    volumeSlider.addEventListener('input', handleVolumeChange);
+    // Siguiente video
+    function playNextVideo() {
+      currentVideoIndex = (currentVideoIndex + 1) % videos.length;
+      playVideo(currentVideoIndex);
+    }
+
+    // Toggle de sonido
+    function toggleSound() {
+      if (!videoElement || !soundOnIcon || !soundOffIcon) return;
+      isMuted = !isMuted;
+      videoElement.muted = isMuted;
+      soundOnIcon.classList.toggle('hidden', isMuted);
+      soundOffIcon.classList.toggle('hidden', !isMuted);
+    }
+
+    // Manejo de errores de video
+    if (videoElement) {
+      videoElement.addEventListener('error', playNextVideo);
+      videoElement.addEventListener('ended', playNextVideo);
+      videoElement.addEventListener('canplay', () => { isLoading = false; });
+    }
+    if (soundToggle) soundToggle.addEventListener('click', toggleSound);
+    if (nextVideoBtn) nextVideoBtn.addEventListener('click', playNextVideo);
+
+    // Inicializar
+    if (videoElement && soundOnIcon && soundOffIcon) {
+      videoElement.muted = false;
+      isMuted = false;
+      soundOnIcon.classList.add('hidden');
+      soundOffIcon.classList.remove('hidden');
+    }
+    loadVideos();
   });
-
-  // Event listeners
-  document.addEventListener('DOMContentLoaded', loadVideos);
-
-  document.addEventListener('DOMContentLoaded', () => {
-    if (!videoElement || !soundToggle || !soundOnIcon || !soundOffIcon) return;
-
-    videoElement.addEventListener('ended', playNextVideo);
-    soundToggle.addEventListener('click', toggleSound);
-
-    document.querySelector('.video-wrapper')?.addEventListener('click', (e: MouseEvent) => {
-      const target = e.target as HTMLElement;
-      if (target.id !== 'soundToggle' && 
-          target.id !== 'soundOnIcon' && 
-          target.id !== 'soundOffIcon') {
-        togglePlayPause();
-      }
-    });
-  });
-  
-
-
 </script>
 
 <style>
-  .titulo{
-    font-size: 20px;
-    top: 10px;
-    left: 20px;
-    position: absolute;
-  }
-  .video-container {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    width: 100%;
-    height: 100vh;
-  }
-  
-  .video-wrapper {
-    position: relative;
-    width: 80vmin; /* Cuadrado usando vmin */
-    height: 80vmin;
-    max-width: 600px;
-    max-height: 600px;
-  }
-  
-  video {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    border-radius: 16px;
-    background-color: #111;
-  }
-  
-  #soundToggle {
-    position: absolute;
-    bottom: 20px;
-    right: 20px;
-    background: rgba(0, 0, 0, 0.5);
-    border: none;
-    border-radius: 50%;
-    width: 40px;
-    height: 40px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    cursor: pointer;
-    color: white;
-  }
-  .sound{
-    margin: auto;
-
-  filter: invert(1);
-  text-align: center;
-  align-content: center;
+:root {
+  --serious-bg: #111;
+  --serious-border: #232323;
+  --serious-font: 'Inter', 'Arial', sans-serif;
+  --serious-title: #fff;
+  --serious-shadow: 0 2px 32px 0 #000a;
+}
+.serious-player-container {
+  display: flex;
+  justify-content: center;
   align-items: center;
-  width: 20px;
-  height: 20px;
+  width: 100vw;
+  height: 100vh;
+  z-index: 1;
+}
+.serious-frame {
+  background: rgba(20, 20, 20, 0.98);
+  border: 1.5px solid var(--serious-border);
+  border-radius: 22px;
+  box-shadow: var(--serious-shadow);
+  padding: 2.5rem 1.5rem 2rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 340px;
+  max-width: 98vw;
+  min-height: 480px;
+  max-height: 92vh;
   position: relative;
+}
+.serious-title {
+  font-family: var(--serious-font);
+  color: var(--serious-title);
+  font-size: 1.25rem;
+  letter-spacing: 0.04em;
+  margin-bottom: 1.2rem;
+  text-align: center;
+  min-height: 2.2em;
+  user-select: none;
+  white-space: pre;
+  opacity: 0.92;
+}
+.serious-video-wrapper {
+  position: relative;
+  width: 550px;
+  height: 500px;
+  max-width: 95vw;
+  max-height: 80vh;
+  aspect-ratio: 4/5;
+  background: #000;
+  border-radius: 16px;
+  box-shadow: 0 2px 32px 0 #000a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 14px;
+  background: #000;
+  box-shadow: none;
+}
+.serious-controls {
+  position: absolute;
+  bottom: 18px;
+  left: 0;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  gap: 2.5rem;
+  z-index: 2;
+}
+.serious-btn {
+  background: rgba(30, 30, 30, 0.85);
+  border: 1.5px solid var(--serious-border);
+  color: var(--serious-title);
+  font-size: 2.1rem;
+  border-radius: 50%;
+  width: 60px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: none;
+  transition: background 0.2s, border 0.2s;
+  outline: none;
+}
+.serious-btn:hover, .serious-btn:focus {
+  background: #232323;
+  color: #fff;
+  border: 1.5px solid #fff2;
+}
+.serious-btn svg {
+  display: block;
+}
+.hidden {
+  display: none;
+}
+@media (max-width: 600px) {
+  .serious-frame {
+    min-width: 98vw;
+    padding: 1rem 0.2rem 1rem 0.2rem;
   }
-  
-  .hidden {
-    display: none;
+  .serious-video-wrapper {
+    width: 98vw;
+    height: 122vw;
+    min-height: 220px;
+    max-height: 80vh;
   }
-  
-  .volume-control {
-    position: absolute;
-    bottom: 50px;
-    right: -60px;
-    width: 150px;
-    height: 30px;
-    background: rgba(0, 0, 0, 0.5);
-    border-radius: 15px;
-    transform: rotate(-90deg);
-    display: none;
-    padding: 5px;
-  }
-
-  #soundToggle:hover .volume-control {
-    display: block;
-  }
-
-  #volumeSlider {
-    width: 100%;
-    height: 5px;
-    -webkit-appearance: none;
-    background: rgba(255, 255, 255, 0.3);
-    outline: none;
-    border-radius: 3px;
-    cursor: pointer;
-  }
-
-  #volumeSlider::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    appearance: none;
-    width: 15px;
-    height: 15px;
-    background: white;
-    border-radius: 50%;
-    cursor: pointer;
-  }
-
-  #volumeSlider::-moz-range-thumb {
-    width: 15px;
-    height: 15px;
-    background: white;
-    border-radius: 50%;
-    cursor: pointer;
-    border: none;
-  }
+}
 </style>

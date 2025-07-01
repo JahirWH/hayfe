@@ -1,23 +1,57 @@
 ---
-import Layout from '../layouts/Layout.astro';
 import VideoPlayer from '../components/VideoPlayer.astro';
-import YoutubePlayer from '../components/YoutubePlayer.astro';
-
 ---
 
-<Layout title="Random Videos">
-  <main>
-    <VideoPlayer />
-    <!-- <YoutubePlayer /> -->
-  </main>
-</Layout>
+<main class="serious-bg">
+  <header class="site-title">hayfe</header>
+  <VideoPlayer />
+</main>
 
 <style>
-  main {
-    width: 100%;
+  :root {
+    --serious-bg: #111;
+    --serious-border: #232323;
+    --serious-font: 'Inter', 'Arial', sans-serif;
+    --serious-title: #fff;
+    --serious-shadow: 0 2px 32px 0 #000a;
+  }
+  html, body {
+    width: 100vw;
+    height: 100vh;
+    margin: 0;
+    padding: 0;
+    background: var(--serious-bg);
+    font-family: var(--serious-font);
+    overflow: hidden;
+  }
+  .serious-bg {
+    width: 100vw;
     height: 100vh;
     display: flex;
+    flex-direction: column;
     justify-content: center;
     align-items: center;
+    background: var(--serious-bg);
+    position: relative;
+  }
+  .site-title {
+    position: absolute;
+    top: 32px;
+    right: 48px;
+    color: var(--serious-title);
+    font-size: 2.1rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    opacity: 0.92;
+    z-index: 10;
+    user-select: none;
+    text-shadow: 0 2px 8px #000a;
+  }
+  @media (max-width: 600px) {
+    .site-title {
+      top: 16px;
+      right: 16px;
+      font-size: 1.3rem;
+    }
   }
 </style>

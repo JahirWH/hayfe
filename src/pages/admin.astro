@@ -1,0 +1,234 @@
+---
+import Layout from '../layouts/Layout.astro';
+---
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Admin Videos</title>
+  <link rel="stylesheet" href="/styles/admin.css" />
+  <link rel="stylesheet" href="/styles/global.css" />
+</head>
+
+<main class="admin-simple-bg">
+  <header class="admin-simple-title">Admin Videos</header>
+  <section class="admin-simple-form-section">
+    <form id="videoForm" class="admin-simple-form">
+      <input type="hidden" id="videoId" />
+      <input type="text" id="videoTitle" name="title" required placeholder="Título del video" />
+      <input type="url" id="videoUrl" name="url" required placeholder="URL del video" />
+      <div class="admin-simple-actions">
+        <button type="submit" class="admin-simple-btn">Guardar</button>
+        <button type="button" id="cancelEdit" class="admin-simple-btn admin-simple-btn-secondary" style="display: none;">Cancelar</button>
+      </div>
+    </form>
+  </section>
+  <section class="admin-simple-list-section">
+    <ul id="videosList" class="admin-simple-list"></ul>
+  </section>
+</main>
+
+<script>
+  let videos = [];
+  let editingId = null;
+
+  function loadVideos() {
+    const stored = localStorage.getItem('videos');
+    videos = stored ? JSON.parse(stored) : [];
+    renderVideos();
+  }
+
+  function saveVideos() {
+    localStorage.setItem('videos', JSON.stringify(videos));
+  }
+
+  function renderVideos() {
+    const videosList = document.getElementById('videosList');
+    if (!videosList) return;
+    if (videos.length === 0) {
+      videosList.innerHTML = '<li class="admin-simple-empty">No hay videos.</li>';
+      return;
+    }
+    videosList.innerHTML = videos.map(video => `
+      <li class="admin-simple-list-item">
+        <span class="admin-simple-list-title">${video.title}</span>
+        <span class="admin-simple-list-url">${video.url}</span>
+        <button class="admin-simple-btn admin-simple-btn-small" onclick="editVideo(${video.id})">Editar</button>
+        <button class="admin-simple-btn admin-simple-btn-small admin-simple-btn-secondary" onclick="deleteVideo(${video.id})">Eliminar</button>
+      </li>
+    `).join('');
+  }
+
+  function addVideo(videoData) {
+    const newVideo = {
+      id: Date.now(),
+      title: videoData.title,
+      url: videoData.url
+    };
+    videos.push(newVideo);
+    saveVideos();
+    renderVideos();
+  }
+
+  function editVideo(id) {
+    const video = videos.find(v => v.id === id);
+    if (!video) return;
+    editingId = id;
+    document.getElementById('videoId').value = id;
+    document.getElementById('videoTitle').value = video.title;
+    document.getElementById('videoUrl').value = video.url;
+    document.getElementById('cancelEdit').style.display = 'inline-block';
+  }
+
+  function updateVideo(videoData) {
+    const index = videos.findIndex(v => v.id === editingId);
+    if (index === -1) return;
+    videos[index] = { ...videos[index], title: videoData.title, url: videoData.url };
+    saveVideos();
+    renderVideos();
+    resetForm();
+  }
+
+  function deleteVideo(id) {
+    if (!confirm('¿Eliminar este video?')) return;
+    videos = videos.filter(v => v.id !== id);
+    saveVideos();
+    renderVideos();
+  }
+
+  function resetForm() {
+    editingId = null;
+    document.getElementById('videoForm').reset();
+    document.getElementById('videoId').value = '';
+    document.getElementById('cancelEdit').style.display = 'none';
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    loadVideos();
+    document.getElementById('videoForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const formData = new FormData(e.target);
+      const videoData = {
+        title: formData.get('title'),
+        url: formData.get('url')
+      };
+      if (editingId) {
+        updateVideo(videoData);
+      } else {
+        addVideo(videoData);
+      }
+    });
+    document.getElementById('cancelEdit').addEventListener('click', resetForm);
+  });
+</script>
+
+<style>
+:root {
+  --admin-bg: #111;
+  --admin-fg: #fff;
+  --admin-border: #232323;
+  --admin-muted: #888;
+  --admin-radius: 10px;
+  --admin-font: 'Inter', 'Arial', sans-serif;
+}
+.admin-simple-bg {
+  min-height: 100vh;
+  background: var(--admin-bg);
+  color: var(--admin-fg);
+  font-family: var(--admin-font);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0;
+}
+.admin-simple-title {
+  margin: 2.5rem 0 1.5rem 0;
+  font-size: 2rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  opacity: 0.92;
+}
+.admin-simple-form-section {
+  width: 100%;
+  max-width: 420px;
+  margin-bottom: 2.5rem;
+}
+.admin-simple-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+.admin-simple-form input[type="text"],
+.admin-simple-form input[type="url"] {
+  padding: 0.7rem 1rem;
+  border: 1px solid var(--admin-border);
+  border-radius: var(--admin-radius);
+  background: #181818;
+  color: var(--admin-fg);
+  font-size: 1rem;
+}
+.admin-simple-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+.admin-simple-btn {
+  background: #181818;
+  color: var(--admin-fg);
+  border: 1px solid var(--admin-border);
+  border-radius: var(--admin-radius);
+  padding: 0.6rem 1.2rem;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background 0.2s, border 0.2s;
+}
+.admin-simple-btn:hover, .admin-simple-btn:focus {
+  background: #222;
+  border: 1px solid #444;
+}
+.admin-simple-btn-secondary {
+  color: var(--admin-muted);
+  border: 1px solid #333;
+  background: #161616;
+}
+.admin-simple-btn-small {
+  padding: 0.3rem 0.7rem;
+  font-size: 0.95rem;
+  margin-left: 0.5rem;
+}
+.admin-simple-list-section {
+  width: 100%;
+  max-width: 520px;
+}
+.admin-simple-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.admin-simple-list-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  border-bottom: 1px solid #232323;
+  padding: 0.7rem 0 0.7rem 0;
+  font-size: 1.05rem;
+}
+.admin-simple-list-title {
+  font-weight: 500;
+  color: var(--admin-fg);
+}
+.admin-simple-list-url {
+  color: var(--admin-muted);
+  font-size: 0.97rem;
+  word-break: break-all;
+  margin-bottom: 0.2rem;
+}
+.admin-simple-empty {
+  color: var(--admin-muted);
+  text-align: center;
+  padding: 2rem 0;
+}
+@media (max-width: 600px) {
+  .admin-simple-form-section, .admin-simple-list-section {
+    max-width: 98vw;
+  }
+}
+</style> 
